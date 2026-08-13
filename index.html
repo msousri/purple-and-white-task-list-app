@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tally — a small list for the day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum-900:#2C1854;
+    --plum-700:#4B2E8F;
+    --violet-600:#7C4DFF;
+    --violet-500:#9169FF;
+    --lilac-300:#C9B6FF;
+    --lavender-100:#F4F0FC;
+    --white:#FFFFFF;
+    --ink:#2A2438;
+    --muted:#8A81A0;
+    --line:#E7DFF9;
+    --danger:#B85C8A;
+    --shadow: 0 20px 50px -20px rgba(76, 43, 143, 0.35);
+    --radius: 18px;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Inter', system-ui, sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 10% 0%, #EFE6FF 0%, transparent 45%),
+      radial-gradient(circle at 90% 10%, #E4D9FB 0%, transparent 40%),
+      linear-gradient(180deg, #FBF9FF 0%, #F1EBFB 100%);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:56px 20px;
+  }
+
+  .app{
+    width:100%;
+    max-width:520px;
+    background:var(--white);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+
+  header{
+    background:linear-gradient(135deg, var(--plum-900) 0%, var(--plum-700) 55%, var(--violet-600) 100%);
+    color:var(--white);
+    padding:32px 32px 28px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    position:relative;
+  }
+
+  header::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 85% -20%, rgba(255,255,255,0.18), transparent 55%);
+    pointer-events:none;
+  }
+
+  .ring-wrap{
+    position:relative;
+    width:74px;
+    height:74px;
+    flex:0 0 auto;
+  }
+
+  .ring-wrap svg{ transform:rotate(-90deg); }
+
+  .ring-track{ fill:none; stroke:rgba(255,255,255,0.22); stroke-width:7; }
+  .ring-fill{
+    fill:none;
+    stroke:#FFFFFF;
+    stroke-width:7;
+    stroke-linecap:round;
+    transition:stroke-dashoffset .5s cubic-bezier(.65,0,.35,1);
+  }
+
+  .ring-label{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-weight:600;
+  }
+
+  .title-block h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+
+  .title-block p{
+    margin:0;
+    font-size:13.5px;
+    color:rgba(255,255,255,0.78);
+  }
+
+  .body{ padding:28px 32px 32px; }
+
+  .add-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+  }
+
+  .add-row input[type="text"]{
+    flex:1;
+    border:1.5px solid var(--line);
+    background:var(--lavender-100);
+    border-radius:12px;
+    padding:13px 16px;
+    font-family:inherit;
+    font-size:14.5px;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease, background .15s ease;
+  }
+
+  .add-row input[type="text"]::placeholder{ color:var(--muted); }
+
+  .add-row input[type="text"]:focus{
+    border-color:var(--violet-600);
+    background:var(--white);
+    box-shadow:0 0 0 4px rgba(124,77,255,0.14);
+  }
+
+  .add-row button{
+    border:none;
+    background:var(--violet-600);
+    color:var(--white);
+    font-family:inherit;
+    font-weight:600;
+    font-size:14px;
+    padding:0 22px;
+    border-radius:12px;
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+
+  .add-row button:hover{ background:var(--plum-700); }
+  .add-row button:active{ transform:scale(0.96); }
+
+  .filters{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+  }
+
+  .filters button{
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+
+  .filters button:hover{ color:var(--plum-700); }
+
+  .filters button.active{
+    background:var(--lavender-100);
+    color:var(--plum-700);
+  }
+
+  ul.list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-height:60px;
+  }
+
+  li.item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 10px 12px 6px;
+    border-radius:12px;
+    transition:background .15s ease;
+    animation:rise .25s ease;
+  }
+
+  li.item:hover{ background:var(--lavender-100); }
+
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(4px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .check{
+    flex:0 0 auto;
+    width:22px;
+    height:22px;
+    border-radius:7px;
+    border:2px solid var(--lilac-300);
+    background:var(--white);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all .15s ease;
+    position:relative;
+  }
+
+  .check:hover{ border-color:var(--violet-600); }
+
+  .item.done .check{
+    background:var(--violet-600);
+    border-color:var(--violet-600);
+  }
+
+  .check svg{
+    width:13px;
+    height:13px;
+    opacity:0;
+    transform:scale(0.5);
+    transition:all .15s ease;
+  }
+
+  .item.done .check svg{ opacity:1; transform:scale(1); }
+
+  .item span.text{
+    flex:1;
+    font-size:14.5px;
+    color:var(--ink);
+    word-break:break-word;
+    outline:none;
+  }
+
+  .item.done span.text{
+    color:var(--muted);
+    text-decoration:line-through;
+    text-decoration-color:var(--lilac-300);
+  }
+
+  .item .remove{
+    flex:0 0 auto;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    width:26px;
+    height:26px;
+    border-radius:8px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:all .15s ease;
+  }
+
+  li.item:hover .remove{ opacity:1; }
+  .item .remove:hover{ background:#F6E7EF; color:var(--danger); }
+
+  .empty{
+    text-align:center;
+    padding:36px 10px;
+    color:var(--muted);
+    font-size:13.5px;
+  }
+
+  .empty strong{
+    display:block;
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    color:var(--plum-700);
+    font-weight:600;
+    margin-bottom:4px;
+  }
+
+  footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--muted);
+  }
+
+  footer button{
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    text-decoration:underline;
+    text-decoration-color:transparent;
+    transition:all .15s ease;
+  }
+
+  footer button:hover{ color:var(--danger); text-decoration-color:var(--danger); }
+
+  @media (max-width:480px){
+    header{ padding:26px 22px 24px; }
+    .body{ padding:22px 22px 26px; }
+    .title-block h1{ font-size:23px; }
+  }
+
+  :focus-visible{ outline:2px solid var(--violet-600); outline-offset:2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 74 74" width="74" height="74">
+        <circle class="ring-track" cx="37" cy="37" r="30"></circle>
+        <circle class="ring-fill" id="ringFill" cx="37" cy="37" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"></circle>
+      </svg>
+      <div class="ring-label" id="ringLabel">0%</div>
+    </div>
+    <div class="title-block">
+      <h1>Tally</h1>
+      <p id="subtitle">Nothing on the list yet</p>
+    </div>
+  </header>
+
+  <div class="body">
+    <div class="add-row">
+      <input type="text" id="taskInput" placeholder="What needs doing?" maxlength="140" autofocus>
+      <button id="addBtn">Add</button>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="active">Active</button>
+      <button class="filter-btn" data-filter="done">Done</button>
+    </div>
+
+    <ul class="list" id="list"></ul>
+
+    <footer>
+      <span id="countLabel">0 tasks</span>
+      <button id="clearDone">Clear completed</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'tally-tasks-v1';
+  let tasks = load();
+  let filter = 'all';
+
+  const listEl = document.getElementById('list');
+  const input = document.getElementById('taskInput');
+  const addBtn = document.getElementById('addBtn');
+  const countLabel = document.getElementById('countLabel');
+  const subtitle = document.getElementById('subtitle');
+  const clearDoneBtn = document.getElementById('clearDone');
+  const ringFill = document.getElementById('ringFill');
+  const ringLabel = document.getElementById('ringLabel');
+  const RING_CIRC = 188.5;
+
+  document.querySelectorAll('.filter-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }catch(e){}
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function addTask(text){
+    text = text.trim();
+    if(!text) return;
+    tasks.unshift({ id: uid(), text, done:false });
+    save();
+    render();
+  }
+
+  function toggleTask(id){
+    const t = tasks.find(t=>t.id===id);
+    if(t){ t.done = !t.done; save(); render(); }
+  }
+
+  function removeTask(id){
+    const el = document.querySelector('[data-id="'+id+'"]');
+    if(el){
+      el.style.transition = 'opacity .18s ease, transform .18s ease';
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(6px)';
+      setTimeout(()=>{
+        tasks = tasks.filter(t=>t.id!==id);
+        save();
+        render();
+      }, 150);
+    } else {
+      tasks = tasks.filter(t=>t.id!==id);
+      save();
+      render();
+    }
+  }
+
+  function editTask(id, newText){
+    const t = tasks.find(t=>t.id===id);
+    if(!t) return;
+    newText = newText.trim();
+    if(newText){ t.text = newText; } 
+    save();
+    render();
+  }
+
+  function clearCompleted(){
+    tasks = tasks.filter(t=>!t.done);
+    save();
+    render();
+  }
+
+  function visibleTasks(){
+    if(filter==='active') return tasks.filter(t=>!t.done);
+    if(filter==='done') return tasks.filter(t=>t.done);
+    return tasks;
+  }
+
+  function render(){
+    const visible = visibleTasks();
+    listEl.innerHTML = '';
+
+    if(tasks.length === 0){
+      listEl.innerHTML = '<li class="empty"><strong>A clear slate.</strong>Add your first task above.</li>';
+    } else if(visible.length === 0){
+      const msg = filter==='done' ? 'Nothing completed yet.' : 'Nothing active — nice work.';
+      listEl.innerHTML = '<li class="empty">'+msg+'</li>';
+    } else {
+      visible.forEach(t=>{
+        const li = document.createElement('li');
+        li.className = 'item' + (t.done ? ' done' : '');
+        li.setAttribute('data-id', t.id);
+
+        const check = document.createElement('button');
+        check.className = 'check';
+        check.setAttribute('aria-label', t.done ? 'Mark as not done' : 'Mark as done');
+        check.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        check.addEventListener('click', ()=>toggleTask(t.id));
+
+        const span = document.createElement('span');
+        span.className = 'text';
+        span.textContent = t.text;
+        span.contentEditable = 'true';
+        span.spellcheck = false;
+        span.addEventListener('blur', ()=>editTask(t.id, span.textContent));
+        span.addEventListener('keydown', (e)=>{
+          if(e.key === 'Enter'){ e.preventDefault(); span.blur(); }
+        });
+
+        const remove = document.createElement('button');
+        remove.className = 'remove';
+        remove.setAttribute('aria-label', 'Delete task');
+        remove.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+        remove.addEventListener('click', ()=>removeTask(t.id));
+
+        li.appendChild(check);
+        li.appendChild(span);
+        li.appendChild(remove);
+        listEl.appendChild(li);
+      });
+    }
+
+    const total = tasks.length;
+    const done = tasks.filter(t=>t.done).length;
+    const pct = total === 0 ? 0 : Math.round((done/total)*100);
+
+    countLabel.textContent = total === 0 ? '0 tasks' : (total - done) + ' of ' + total + ' left';
+    subtitle.textContent = total === 0 ? 'Nothing on the list yet' : (done === total ? 'Everything is done' : (total-done) + ' task' + ((total-done)===1?'':'s') + ' to go');
+
+    ringLabel.textContent = pct + '%';
+    const offset = RING_CIRC - (pct/100)*RING_CIRC;
+    ringFill.style.strokeDashoffset = offset;
+  }
+
+  addBtn.addEventListener('click', ()=>{
+    addTask(input.value);
+    input.value = '';
+    input.focus();
+  });
+
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){
+      addTask(input.value);
+      input.value = '';
+    }
+  });
+
+  clearDoneBtn.addEventListener('click', clearCompleted);
+
+  render();
+})();
+</script>
+
+</body>
+</html>
